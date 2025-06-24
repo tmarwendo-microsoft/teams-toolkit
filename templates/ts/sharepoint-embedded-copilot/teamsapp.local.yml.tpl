@@ -1,12 +1,45 @@
-# yaml-language-server: $schema=https://aka.ms/teams-toolkit/v1.7/yaml.schema.json
+# yaml-language-server: $schema=Q:\src\teams-toolkit\packages\fx-core\resource\yaml-schema\v1.8\yaml.schema.json
 # Visit https://aka.ms/teamsfx-v5.0-guide for details on this file
 # Visit https://aka.ms/teamsfx-actions for details on actions
-version: v1.7
-      
+version: v1.8
+
+provision:
+  # 1. Creates a new Microsoft Entra app to authenticate users if the environment variable that stores clientId is empty
+  - uses: aadApp/create
+    with:
+      # Note: when you run aadApp/update, the Microsoft Entra app name will be updated
+      # based on the definition in manifest. If you don't want to change the
+      # name, make sure the name in Microsoft Entra manifest is the same with the name
+      # defined here.
+      name: MySharePointEmbeddedApp
+      # If the value is false, the action will not generate client secret for you
+      generateClientSecret: true
+      # Authenticate users with a Microsoft work or school account in your
+      # organization's Microsoft Entra tenant (for example, single tenant).
+      signInAudience: AzureADMyOrg
+    # Write the information of created resources into environment file for the
+    # specified environment variable(s).
+    writeToEnvironmentFile:
+      clientId: AAD_APP_CLIENT_ID
+      # Environment variable that starts with `SECRET_` will be stored to the
+      # .env.{envName}.user environment file
+      clientSecret: SECRET_AAD_APP_CLIENT_SECRET
+      objectId: AAD_APP_OBJECT_ID
+      tenantId: AAD_APP_TENANT_ID
+      authority: AAD_APP_OAUTH_AUTHORITY
+      authorityHost: AAD_APP_OAUTH_AUTHORITY_HOST
+  # 2. Create a new container type
+  - uses: sharePointEmbeddedContainerType/create
+    with:
+      name: testCT
+      billingClassification: trial
+      discoverable: true
+      owningApplicationId: ${{AAD_APP_CLIENT_ID}}
+    writeToEnvironmentFile:
+      containerTypeId: CONTAINER_TYPE_ID
+
 deploy:
   # Run npm command
   - uses: cli/runNpmCommand
     with:
       args: install --no-audit
-
-
